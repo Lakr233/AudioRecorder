@@ -60,14 +60,8 @@ class RootController: NSObject, EditorControllerDelegate {
 
         func buttonTitle() -> String {
             switch self {
-            case .NotYetStarted:
-                "Record"
-
-            case .Recording:
-                "Stop"
-
-            default:
-                String(rawValue)
+            case .NotYetStarted: "Record"
+            case .Recording: "Stop"
             }
         }
     }
@@ -91,7 +85,8 @@ class RootController: NSObject, EditorControllerDelegate {
 
             // Create and start recording
             createRecorder()
-            recorder?.record()
+            let ans = recorder?.record()
+            print("[*] starting record returns \(ans ?? false ? "success" : "failure")")
 
             // Create a timer
             timer = Timer.scheduledTimer(
@@ -125,7 +120,10 @@ class RootController: NSObject, EditorControllerDelegate {
             // Clear the power trace
             powerTrace.removeAll(keepingCapacity: false)
 
-            NSApp.beginSheet(editor!.window!, modalFor: window, modalDelegate: nil, didEnd: nil, contextInfo: nil)
+            guard let window = NSApp.keyWindow, let sheetWindow = editor?.window else {
+                return
+            }
+            window.beginSheet(sheetWindow, completionHandler: nil)
         }
 
         recorderState = nextState
@@ -190,8 +188,11 @@ class RootController: NSObject, EditorControllerDelegate {
     // MARK: EditorControllerDelegate methods
 
     func editorControllerDidFinishExporting(editor: EditorController) {
-        NSApp.endSheet(editor.window!)
-        editor.window!.close()
+        guard let window = NSApp.keyWindow, let sheetWindow = editor.window else {
+            return
+        }
+        window.endSheet(sheetWindow)
+        sheetWindow.close()
         self.editor = nil
         timeField.stringValue = TimeInterval(0).hhmmss()
     }

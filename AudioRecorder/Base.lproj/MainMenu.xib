@@ -685,9 +685,9 @@
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
                     <textField focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="bnm-Ht-Nkq">
-                        <rect key="frame" x="18" y="60" width="273" height="45"/>
+                        <rect key="frame" x="22" y="60" width="266" height="45"/>
                         <constraints>
-                            <constraint firstAttribute="height" constant="45" id="91Y-5a-2PG"/>
+                            <constraint firstAttribute="height" constant="45" id="X2C-Bb-NIW"/>
                         </constraints>
                         <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" refusesFirstResponder="YES" sendsActionOnEndEditing="YES" state="on" alignment="center" title="20 : 55 : 180" id="bMk-x2-Wpu">
                             <font key="font" size="33" name="Monaco"/>
@@ -707,11 +707,10 @@
                     </button>
                 </subviews>
                 <constraints>
-                    <constraint firstItem="bnm-Ht-Nkq" firstAttribute="top" secondItem="EiT-Mj-1SZ" secondAttribute="top" constant="20" symbolic="YES" id="OMx-wh-osr"/>
-                    <constraint firstAttribute="trailing" secondItem="bnm-Ht-Nkq" secondAttribute="trailing" constant="20" symbolic="YES" id="PR3-ZX-uXg"/>
-                    <constraint firstAttribute="bottom" secondItem="4bi-TE-y9X" secondAttribute="bottom" constant="20" symbolic="YES" id="iDe-pZ-SAG"/>
-                    <constraint firstItem="bnm-Ht-Nkq" firstAttribute="leading" secondItem="EiT-Mj-1SZ" secondAttribute="leading" constant="20" symbolic="YES" id="n8y-o2-11V"/>
-                    <constraint firstItem="bnm-Ht-Nkq" firstAttribute="centerX" secondItem="4bi-TE-y9X" secondAttribute="centerX" id="to0-01-1PS"/>
+                    <constraint firstItem="bnm-Ht-Nkq" firstAttribute="centerX" secondItem="4bi-TE-y9X" secondAttribute="centerX" id="Mpj-2a-gpd"/>
+                    <constraint firstItem="bnm-Ht-Nkq" firstAttribute="centerX" secondItem="EiT-Mj-1SZ" secondAttribute="centerX" id="Oag-aM-uug"/>
+                    <constraint firstItem="bnm-Ht-Nkq" firstAttribute="top" secondItem="EiT-Mj-1SZ" secondAttribute="top" constant="20" symbolic="YES" id="X1E-YR-QFt"/>
+                    <constraint firstAttribute="bottom" secondItem="4bi-TE-y9X" secondAttribute="bottom" constant="20" symbolic="YES" id="jbp-iA-mB4"/>
                 </constraints>
             </view>
             <point key="canvasLocation" x="263.5" y="304.5"/>

@@ -11,7 +11,7 @@ import Cocoa
 class AppDelegate: NSObject, NSApplicationDelegate {
     @IBOutlet var window: NSWindow!
 
-    func applicationShouldTerminateAfterLastWindowClosed(sender _: NSApplication) -> Bool {
+    func applicationShouldTerminateAfterLastWindowClosed(_: NSApplication) -> Bool {
         true
     }
 }

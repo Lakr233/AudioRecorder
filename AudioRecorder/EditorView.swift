@@ -10,20 +10,20 @@ import Cocoa
 import QuartzCore
 
 // MARK: EditorViewDelegate
+
 protocol EditorViewDelegate {
-    func timeRangeChanged(editor: EditorView, timeRange: (start: NSTimeInterval, end: NSTimeInterval))
+    func timeRangeChanged(editor: EditorView, timeRange: (start: TimeInterval, end: TimeInterval))
 }
 
 class EditorView: NSView {
-    
     // MARK: Defined types
-    
+
     enum DragState: Int {
         case Started
         case DraggingFromLeft, DraggingFromRight
         case Ended
     }
-    
+
     struct LevelGroup {
         let levels: [Float]
         var average: Float {
@@ -33,13 +33,14 @@ class EditorView: NSView {
             }
             return total / Float(levels.count)
         }
-        
+
         init(levels withLevels: [Float]) {
             levels = withLevels
         }
     }
-    
+
     // MARK: Properties
+
     var minimumPower: Float = 0
     var maximumPower: Float = 160.0
     var canvasWidth: CGFloat = 1.0
@@ -48,152 +49,149 @@ class EditorView: NSView {
     var trimView: NSView?
     var dragState = DragState.Ended
     var previousPoint = NSZeroPoint
-    var duration: NSTimeInterval = 0.0
+    var duration: TimeInterval = 0.0
     var delegate: EditorViewDelegate?
-    
-    var firstBandX: CGFloat {
-    return CGRectGetMidX(bounds) - CGFloat(canvasWidth / 2)
-    }
-    
-    var canvasRect: CGRect {
-    return CGRectMake(firstBandX, 0.0, canvasWidth, bounds.size.height)
-    }
-    
-    var timeScale: Float {
-    return Float(CGFloat(duration) / canvasWidth)
-    }
-    
-    // MARK: properties
-    var audioLevels: [Float] = [] {
-    didSet {
-        let totalLevels = audioLevels.count
-      
-      let sortedLevels = audioLevels.sort {$0 < $1}
-        
-        if let min = sortedLevels.firstObject() {
-            if min < 0 {
-                levelOffset = 0 - min
-                minimumPower = 0
-            } else {
-                minimumPower = min
-            }
-        }
-        if let max = sortedLevels.lastObject() {
-            maximumPower = max + levelOffset
-        }
-        var groups: [LevelGroup] = []
-        if totalLevels < Int(bounds.size.width) {
-            for audioLevel in audioLevels {
-                let group = LevelGroup(levels: [audioLevel])
-                groups.append(group)
-            }
-            canvasWidth = CGFloat(totalLevels)
-        } else {
-            canvasWidth = bounds.size.width
-            while (totalLevels % Int(canvasWidth) == 0) {
-                --canvasWidth
-            }
-            
-            let levelsInAGroup = totalLevels / Int(canvasWidth)
-            var currentGroup: LevelGroup
-            var levelsForCurrentGroup: [Float] = []
-            
-            for level in audioLevels {
-                
-                levelsForCurrentGroup.append(level)
 
-                if levelsForCurrentGroup.count == levelsInAGroup {
-                    currentGroup = LevelGroup(levels: levelsForCurrentGroup)
-                    groups.append(currentGroup)
-                    levelsForCurrentGroup = []
+    var firstBandX: CGFloat {
+        CGRectGetMidX(bounds) - CGFloat(canvasWidth / 2)
+    }
+
+    var canvasRect: CGRect {
+        CGRectMake(firstBandX, 0.0, canvasWidth, bounds.size.height)
+    }
+
+    var timeScale: Float {
+        Float(CGFloat(duration) / canvasWidth)
+    }
+
+    // MARK: properties
+
+    var audioLevels: [Float] = [] {
+        didSet {
+            let totalLevels = audioLevels.count
+            let sortedLevels = audioLevels.sorted { $0 < $1 }
+
+            if let min = sortedLevels.firstObject() {
+                if min < 0 {
+                    levelOffset = 0 - min
+                    minimumPower = 0
+                } else {
+                    minimumPower = min
                 }
             }
+            if let max = sortedLevels.lastObject() {
+                maximumPower = max + levelOffset
+            }
+            var groups: [LevelGroup] = []
+            if totalLevels < Int(bounds.size.width) {
+                for audioLevel in audioLevels {
+                    let group = LevelGroup(levels: [audioLevel])
+                    groups.append(group)
+                }
+                canvasWidth = CGFloat(totalLevels)
+            } else {
+                canvasWidth = bounds.size.width
+                while totalLevels % Int(canvasWidth) == 0 {
+                    canvasWidth -= 1
+                }
+
+                let levelsInAGroup = totalLevels / Int(canvasWidth)
+                var currentGroup: LevelGroup
+                var levelsForCurrentGroup: [Float] = []
+
+                for level in audioLevels {
+                    levelsForCurrentGroup.append(level)
+
+                    if levelsForCurrentGroup.count == levelsInAGroup {
+                        currentGroup = LevelGroup(levels: levelsForCurrentGroup)
+                        groups.append(currentGroup)
+                        levelsForCurrentGroup = []
+                    }
+                }
+            }
+
+            if let theView = trimView {
+                theView.frame = canvasRect
+            }
+
+            levelGroups = groups
+
+            setNeedsDisplay(frame)
         }
-        
-        if let theView = trimView {
-            theView.frame = canvasRect
-        }
-        
-        levelGroups = groups
-        
-        setNeedsDisplayInRect(frame)
-    }
     }
 
     // MARK: Overrides
-  
-    override func acceptsFirstMouse(theEvent: NSEvent?) -> Bool  {
-        return true
+
+    override func acceptsFirstMouse(for _: NSEvent?) -> Bool {
+        true
     }
-    
+
     override var acceptsFirstResponder: Bool {
-    get {
-        return true
+        true
     }
-    }
-    
-    override func awakeFromNib()  {
+
+    override func awakeFromNib() {
         super.awakeFromNib()
-        
+
         trimView = NSView(frame: bounds)
-        trimView!.layerContentsRedrawPolicy = NSViewLayerContentsRedrawPolicy.OnSetNeedsDisplay
+        trimView!.layerContentsRedrawPolicy = .onSetNeedsDisplay
         trimView!.wantsLayer = true
         trimView!.layer = CALayer()
         trimView!.layer!.needsDisplayOnBoundsChange = true
-        trimView!.layer!.autoresizingMask = [CAAutoresizingMask.LayerWidthSizable, CAAutoresizingMask.LayerHeightSizable]
-        
+        trimView!.layer!.autoresizingMask = [CAAutoresizingMask.layerWidthSizable, CAAutoresizingMask.layerHeightSizable]
+
         let trimLayer = CALayer()
         trimLayer.needsDisplayOnBoundsChange = true
-        trimLayer.autoresizingMask = CAAutoresizingMask(rawValue: CAAutoresizingMask.LayerWidthSizable.rawValue | CAAutoresizingMask.LayerHeightSizable.rawValue)
+        trimLayer.autoresizingMask = CAAutoresizingMask(rawValue: CAAutoresizingMask.layerWidthSizable.rawValue | CAAutoresizingMask.layerHeightSizable.rawValue)
         let trimColor = NSColor(calibratedRed: 0.0, green: 0.59, blue: 1.0, alpha: 1.0)
-        trimLayer.backgroundColor = trimColor.colorWithAlphaComponent(0.3).CGColor
+        trimLayer.backgroundColor = trimColor.withAlphaComponent(0.3).cgColor
         trimLayer.borderWidth = 2.0
         trimLayer.cornerRadius = 10.0
-        trimLayer.borderColor = trimColor.colorWithAlphaComponent(0.8).CGColor
+        trimLayer.borderColor = trimColor.withAlphaComponent(0.8).cgColor
         trimLayer.frame = trimView!.layer!.bounds
-        
+
         trimView!.layer!.addSublayer(trimLayer)
-        
+
         addSubview(trimView!)
     }
-    
-    override func drawRect(dirtyRect: NSRect) {
-        super.drawRect(dirtyRect)
+
+    override func draw(_ dirtyRect: NSRect) {
+        super.draw(dirtyRect)
 
         func heightForCurrentBand(level: Float) -> Float {
-            let powerFSD: Float = Float(maximumPower - minimumPower)
-            let heightFSD: Float = Float(CGRectGetHeight(bounds))
+            let powerFSD = Float(maximumPower - minimumPower)
+            let heightFSD = Float(CGRectGetHeight(bounds))
             let height: Float = (level + levelOffset) * (heightFSD / powerFSD)
             return height
         }
-        
+
         var startPointX = firstBandX
-        //let currentContext: CGContextRef = Unmanaged<CGContext>.fromOpaque(NSGraphicsContext.currentContext().graphicsPort()).takeUnretainedValue()
-        let currentContext = NSGraphicsContext.currentContext()?.CGContext
+        // let currentContext: CGContextRef = Unmanaged<CGContext>.fromOpaque(NSGraphicsContext.currentContext().graphicsPort()).takeUnretainedValue()
+        guard let currentContext = NSGraphicsContext.current?.cgContext else { return }
 
         let backgroundColor = NSColor(calibratedRed: 0.82, green: 0.86, blue: 0.87, alpha: 1.0)
         let foregroundColor = NSColor(calibratedRed: 0.30, green: 0.44, blue: 0.58, alpha: 1.0)
-        CGContextSetFillColorWithColor(currentContext, backgroundColor.CGColor)
-        CGContextFillRect(currentContext, bounds)
-        
-        CGContextSetLineWidth(currentContext, 1.0)
-        CGContextSetStrokeColorWithColor(currentContext, foregroundColor.CGColor)
-        
+        currentContext.setFillColor(backgroundColor.cgColor)
+        currentContext.fill(bounds)
+
+        currentContext.setLineWidth(1.0)
+        currentContext.setStrokeColor(foregroundColor.cgColor)
+
         for levelGroup in levelGroups {
             let startPoint = CGPointMake(CGFloat(startPointX), 0.0)
-            let endPoint = CGPointMake(startPoint.x, CGFloat(heightForCurrentBand(levelGroup.average)))
+            let endPoint = CGPointMake(startPoint.x, CGFloat(heightForCurrentBand(level: levelGroup.average)))
             let points = [startPoint, endPoint]
-            CGContextAddLines(currentContext, points, 2)
-            CGContextStrokePath(currentContext)
-            ++startPointX
+            currentContext.addLines(between: points)
+            currentContext.strokePath()
+            startPointX += 1
         }
     }
-    
+
     // MARK: Instance methods
-    
-    func selectedRange() -> (start: NSTimeInterval, end: NSTimeInterval) {
+
+    func selectedRange() -> (start: TimeInterval, end: TimeInterval) {
         var returnValue = (0.0, duration)
-        
+
         if trimView != nil {
             var start = Float(trimView!.frame.origin.x - firstBandX) * timeScale
             var end = Float(trimView!.frame.origin.x + trimView!.frame.size.width - firstBandX) * timeScale
@@ -203,26 +201,26 @@ class EditorView: NSView {
             if end > Float(duration) {
                 end = Float(duration)
             }
-            
-            returnValue = (NSTimeInterval(floorf(start)), NSTimeInterval(floorf(end)))
+
+            returnValue = (TimeInterval(floorf(start)), TimeInterval(floorf(end)))
         }
-        
+
         return returnValue
     }
 
-    func reset() -> () {
+    func reset() {
         if let theTrimView = trimView {
             theTrimView.frame = canvasRect
-            delegate?.timeRangeChanged(self, timeRange: selectedRange())
+            delegate?.timeRangeChanged(editor: self, timeRange: selectedRange())
         }
     }
-    
+
     // MARK: Mouse events
-    
-    override func mouseDown(theEvent: NSEvent)  {
+
+    override func mouseDown(with theEvent: NSEvent) {
         if trimView != nil {
             let point = theEvent.locationInWindow
-            let convertedPoint = self.convertPoint(point, toView: self)
+            let convertedPoint = convert(point, to: self)
             if NSPointInRect(convertedPoint, frame) {
                 let midX = trimView!.frame.origin.x + trimView!.frame.size.width / 2
                 if convertedPoint.x > midX {
@@ -234,10 +232,10 @@ class EditorView: NSView {
             }
         }
     }
-    
-    override func mouseDragged(theEvent: NSEvent) {
-        if (dragState == .DraggingFromRight || dragState == .DraggingFromLeft) && trimView != nil {
-            let point = self.convertPoint(theEvent.locationInWindow, toView: self)
+
+    override func mouseDragged(with theEvent: NSEvent) {
+        if dragState == .DraggingFromRight || dragState == .DraggingFromLeft, trimView != nil {
+            let point = convert(theEvent.locationInWindow, to: self)
             var targetFrame = trimView!.frame
             let deltaX = point.x - previousPoint.x
             if dragState == .DraggingFromLeft {
@@ -248,22 +246,20 @@ class EditorView: NSView {
             }
 
             targetFrame = NSIntegralRect(targetFrame)
-            
-            if (targetFrame.size.width > 10.0) {
+
+            if targetFrame.size.width > 10.0 {
                 if !NSContainsRect(canvasRect, targetFrame) {
                     targetFrame = NSIntersectionRect(canvasRect, targetFrame)
                 }
 
                 trimView!.frame = targetFrame
-                delegate?.timeRangeChanged(self, timeRange: selectedRange())
+                delegate?.timeRangeChanged(editor: self, timeRange: selectedRange())
                 previousPoint = point
             }
         }
     }
-    
-    override func mouseUp(theEvent: NSEvent)  {
+
+    override func mouseUp(with _: NSEvent) {
         dragState = .Ended
     }
-    
-    
 }
